@@ -7,7 +7,7 @@ import (
 
 var failures = 0
 
-func check(_ ok: bool, _ what: string) {
+func check(ok: bool, what: string) {
     print(ok ? "ok    \(what)" : "FAIL  \(what)")
     if !ok { failures += 1 }
 }
@@ -15,7 +15,7 @@ func check(_ ok: bool, _ what: string) {
 /// Log records what actions did, in order.
 final class Log {
     var lines: [string] = []
-    func add(_ s: string) { lines.append(s) }
+    func add(s: string) { lines.append(s) }
     var text: string {
         var s = ""
         for (i, l) in lines.enumerated() { s += (i > 0 ? " " : "") + l }
@@ -25,7 +25,7 @@ final class Log {
 
 /// steps is an action that runs for n ticks, then succeeds, logging each
 /// start, tick and halt.
-func steps(_ name: string, _ n: int, _ log: Log) -> tree.Node {
+func steps(name: string, n: int, log: Log) -> tree.Node {
     var left = 0
     return tree.Action(name, start: { left = n; log.add("start:" + name) }, tick: { _ in
         left -= 1

@@ -56,7 +56,7 @@ public final class Node {
     var askedFrame = -1
     var answer = false
 
-    init(_ name: string, _ kind: kind, children: [Node] = [], start: (() -> Void)? = nil,
+    init(name: string, kind: kind, children: [Node] = [], start: (() -> Void)? = nil,
          step: ((float32) -> Status)? = nil, stop: (() -> Void)? = nil, test: (() -> bool)? = nil, seconds: float32 = 0) {
         Name = name
         self.kind = kind
@@ -69,7 +69,7 @@ public final class Node {
     }
 
     /// Tick runs the node for a frame of dt seconds ending at time now.
-    func Tick(_ dt: float32, _ now: float64, _ frame: int) -> Status {
+    func Tick(dt: float32, now: float64, frame: int) -> Status {
         let wasRunning = Running
         let s = run(dt, now, frame, wasRunning)
         Running = s == .running
@@ -78,7 +78,7 @@ public final class Node {
 
     // ask is a condition's answer this frame: asked once, so a condition
     // checked by Can and then by Tick (a dice roll, say) agrees with itself.
-    func ask(_ frame: int) -> bool {
+    func ask(frame: int) -> bool {
         if askedFrame != frame {
             answer = test!()
             askedFrame = frame
@@ -89,7 +89,7 @@ public final class Node {
     /// Can is whether the node could start now, judged by the conditions
     /// that guard it, without starting it: a sequence's leading
     /// conditions, a cooldown's clock. Actions can always start.
-    func Can(_ now: float64, _ frame: int) -> bool {
+    func Can(now: float64, frame: int) -> bool {
         switch kind {
         case .condition:
             return ask(frame)
@@ -113,7 +113,7 @@ public final class Node {
         }
     }
 
-    func run(_ dt: float32, _ now: float64, _ frame: int, _ resumed: bool) -> Status {
+    func run(dt: float32, now: float64, frame: int, resumed: bool) -> Status {
         switch kind {
         case .condition:
             return ask(frame) ? .success : .failure
@@ -266,13 +266,13 @@ public final class Tree {
     public private(set) var Now: float64 = 0
     var frame = 0
 
-    public init(_ root: Node) {
+    public init(root: Node) {
         Root = root
     }
 
     /// Tick runs the tree for dt seconds.
     @discardableResult
-    public func Tick(_ dt: float32) -> Status {
+    public func Tick(dt: float32) -> Status {
         Now += float64(dt)
         frame += 1
         return Root.Tick(dt, Now, frame)
@@ -293,18 +293,18 @@ public final class Tree {
 /// `tick` each frame with the seconds passed (answer .running until it is
 /// done), and `halt` when it ends for any reason: finished, failed, or
 /// interrupted by something more important.
-public func Action(_ name: string, start: (() -> Void)? = nil, tick: @escaping (float32) -> Status,
+public func Action(name: string, start: (() -> Void)? = nil, tick: @escaping (float32) -> Status,
                    halt: (() -> Void)? = nil) -> Node {
     return Node(name, .action, start: start, step: tick, stop: halt)
 }
 
 /// Condition is a question: success when `test` is true.
-public func Condition(_ name: string, _ test: @escaping () -> bool) -> Node {
+public func Condition(name: string, test: @escaping () -> bool) -> Node {
     return Node(name, .condition, test: test)
 }
 
 /// Wait succeeds after `seconds`, running till then.
-public func Wait(_ name: string, _ seconds: float32) -> Node {
+public func Wait(name: string, seconds: float32) -> Node {
     return Node(name, .wait, seconds: seconds)
 }
 
@@ -313,13 +313,13 @@ public func Wait(_ name: string, _ seconds: float32) -> Node {
 /// Sequence runs its children in order while they succeed: it fails at
 /// the first that fails, and succeeds when all have. A child left running
 /// is resumed next tick, so conditions before it aren't asked again.
-public func Sequence(_ name: string, _ children: [Node]) -> Node {
+public func Sequence(name: string, children: [Node]) -> Node {
     return Node(name, .sequence, children: children)
 }
 
 /// Selector tries its children in order until one succeeds, resuming a
 /// running one next tick.
-public func Selector(_ name: string, _ children: [Node]) -> Node {
+public func Selector(name: string, children: [Node]) -> Node {
     return Node(name, .selector, children: children)
 }
 
@@ -327,40 +327,40 @@ public func Selector(_ name: string, _ children: [Node]) -> Node {
 /// doesn't fail is its answer, and a lower one that was running is halted.
 /// More important children interrupt less important ones the moment they
 /// can run.
-public func Priority(_ name: string, _ children: [Node]) -> Node {
+public func Priority(name: string, children: [Node]) -> Node {
     return Node(name, .priority, children: children)
 }
 
 /// Parallel ticks all its children every frame: a mob walking while it
 /// looks around. It fails as soon as one fails and succeeds once all have.
-public func Parallel(_ name: string, _ children: [Node]) -> Node {
+public func Parallel(name: string, children: [Node]) -> Node {
     return Node(name, .parallel, children: children)
 }
 
 // ---- decorators ----
 
 /// Invert swaps a child's success and failure.
-public func Invert(_ child: Node) -> Node {
+public func Invert(child: Node) -> Node {
     return Node("not " + child.Name, .invert, children: [child])
 }
 
 /// Succeed answers success whenever its child finishes, either way.
-public func Succeed(_ child: Node) -> Node {
+public func Succeed(child: Node) -> Node {
     return Node(child.Name, .succeed, children: [child])
 }
 
 /// Cooldown fails for `seconds` after its child finishes, so the child
 /// can't run again until then.
-public func Cooldown(_ seconds: float32, _ child: Node) -> Node {
+public func Cooldown(seconds: float32, child: Node) -> Node {
     return Node(child.Name, .cooldown, children: [child], seconds: seconds)
 }
 
 /// Timeout halts its child and fails if it runs longer than `seconds`.
-public func Timeout(_ seconds: float32, _ child: Node) -> Node {
+public func Timeout(seconds: float32, child: Node) -> Node {
     return Node(child.Name, .timeout, children: [child], seconds: seconds)
 }
 
 /// Repeat runs its child again each time it succeeds, until it fails.
-public func Repeat(_ child: Node) -> Node {
+public func Repeat(child: Node) -> Node {
     return Node(child.Name, .repeating, children: [child])
 }
